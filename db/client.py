@@ -1,5 +1,5 @@
 
-from config.settings import Settings
+from db.config.settings import Settings
 from supabase import create_client, Client
 
 class SupabaseClient:
