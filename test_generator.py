@@ -1,4 +1,4 @@
-from generator import generate_notification
+from services.notification_service import generate_notification
 
 mock_events = [
     {
