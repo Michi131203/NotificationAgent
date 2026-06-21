@@ -35,3 +35,20 @@ class EventService:
         except Exception as e:
             self.logger.error(f"Failed to fetch event categories: {e}")
             return []
+        
+    def generate_recommendations(self, user_map, event_map):
+        all_results = {}
+
+        for user_id, user_categories in user_map.items():
+            scores = {}
+
+            for event_id, event_categories in event_map.items():
+                user_categories_set = set(user_categories)
+                event_categories_set = set(event_categories)
+                matches = user_categories_set.intersection(event_categories_set)
+                if matches:
+                    scores[event_id] = len(matches)
+
+            all_results[user_id] = scores
+
+        return all_results

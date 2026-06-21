@@ -14,7 +14,10 @@ def main():
     eventcategories = service.get_all_event_categories()
     for row in eventcategories:
         event_map[row['event_id']].append(row['category_id'])
-    print(event_map)
+    matchedscore = service.generate_recommendations(user_map, event_map)
+    print("Matched Scores:")
+    for user_id, scores in matchedscore.items():
+        print(f"User {user_id}: {scores}")
 
 if __name__ == "__main__":
     main()
