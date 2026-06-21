@@ -17,21 +17,21 @@ class EventService:
             except Exception as e:
                 self.logger.error(f"Failed to delete event '{event['name']}': {e}")
         self.logger.info("Finished cleaning old events.")
-    def get_users(self):
-        try:
-            self.logger.info("Fetching users from the database.")
-            users = self.repo.get_users()
-            self.logger.info(f"Fetched {len(users)} users.")
-            return users
-        except Exception as e:
-            self.logger.error(f"Failed to fetch users: {e}")
-            return []
     def get_all_user_categories(self):
         try:
-            self.logger.info("Fetching categories from the database.")
+            self.logger.info("Fetching user categories from the database.")
             categories = self.repo.get_all_user_categories()
-            self.logger.info(f"Fetched {len(categories)} categories.")
+            self.logger.info(f"Fetched {len(categories)} user categories.")
             return categories
         except Exception as e:
-            self.logger.error(f"Failed to fetch categories: {e}")
+            self.logger.error(f"Failed to fetch user categories: {e}")
+            return []
+    def get_all_event_categories(self):
+        try:
+            self.logger.info("Fetching event categories from the database.")
+            categories = self.repo.get_all_event_categories()
+            self.logger.info(f"Fetched {len(categories)} event categories.")
+            return categories
+        except Exception as e:
+            self.logger.error(f"Failed to fetch event categories: {e}")
             return []

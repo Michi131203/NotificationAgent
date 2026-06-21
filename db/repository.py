@@ -18,15 +18,16 @@ class EventRepository:
         except Exception as e:
             raise Exception(f"Error deleting event '{event_name}': {e}")
         return response.data
-    def get_users(self):
-        try:
-            response = self.client.table("user_profiles").select("id").execute()
-        except Exception as e:
-            raise Exception(f"Error fetching users: {e}")
-        return response.data
     def get_all_user_categories(self):
         try:
             response = self.client.table("user_categories").select("user_id, category_id").execute()
         except Exception as e:
             raise Exception(f"Error fetching categories: {e}")
         return response.data
+    def get_all_event_categories(self):
+        try:
+            response = self.client.table("event_categories").select("event_id, category_id").execute()
+        except Exception as e:
+            raise Exception(f"Error fetching event categories: {e}")
+        return response.data
+            
