@@ -7,8 +7,8 @@ __pycache__/
 *.so
 #env
 .env
-#json
-.json
+# Generated pipeline output
+recommendations.json
 # Distribution / packaging
 .Python
 build/
