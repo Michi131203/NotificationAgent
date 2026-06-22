@@ -37,6 +37,7 @@ def strip_emojis(value):
 def main():
     logger.info("Starting recommendation pipeline.")
     service = EventService()
+    client = SupabaseClient.get_instance()
     service.clean_old_events()
     usercategories = service.get_all_user_categories()
     for row in usercategories:
@@ -47,6 +48,21 @@ def main():
     for row in eventcategories:
         event_map[row['event_id']].append(row['category_id'])
     logger.info(f"Built category map for {len(event_map)} events.")
+
+    # category_id -> name (small table, fetched once)
+    cat_rows = client.table("categories").select("id, name").execute().data
+    cat_names = {c["id"]: c["name"] for c in cat_rows}
+
+    # host_id -> name, lazily cached (only the hosts we actually need)
+    host_cache: dict[str, str | None] = {}
+
+    def host_name(host_id):
+        if not host_id:
+            return None
+        if host_id not in host_cache:
+            resp = client.table("hosts").select("name").eq("id", host_id).execute()
+            host_cache[host_id] = resp.data[0]["name"] if resp.data else None
+        return host_cache[host_id]
 
     matchedscore = service.generate_recommendations(user_map, event_map)
     top_recommendations = {}
@@ -63,16 +79,23 @@ def main():
             if not eventdetails:
                 logger.warning(f"Skipping event {event_id} for user {user_id}: no details found.")
                 continue
-            eventdetails = strip_emojis(eventdetails)
-            events.append({
+            categories = [
+                cat_names[cid]
+                for cid in event_map.get(event_id, [])
+                if cid in cat_names
+            ]
+            events.append(strip_emojis({
                 "id": event_id,
                 "name": eventdetails.get("name"),
-                "description": eventdetails.get("description"),
+                "date_time": eventdetails.get("date_time"),
                 "location": eventdetails.get("location"),
-                "start_time": eventdetails.get("start_time"),
-                "host": eventdetails.get("host"),
+                "host_name": host_name(eventdetails.get("host")),
+                "image_url": eventdetails.get("image_url"),
+                "source_url": eventdetails.get("source_url"),
+                "event_type": eventdetails.get("event_type"),
+                "categories": categories,
                 "score": score,
-            })
+            }))
         recommendations.append({
             "user_id": user_id,
             "events": events,
