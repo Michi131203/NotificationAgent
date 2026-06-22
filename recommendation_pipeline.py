@@ -2,7 +2,10 @@ import re
 import json
 from db.client import SupabaseClient
 from services.event_services import EventService
+from utils.logger import get_logger
 from collections import defaultdict
+
+logger = get_logger("RecommendationPipeline")
 
 user_map = defaultdict(list)
 event_map = defaultdict(list)
@@ -32,19 +35,25 @@ def strip_emojis(value):
     return value
 
 def main():
+    logger.info("Starting recommendation pipeline.")
     service = EventService()
-    #service.clean_old_events()
+    service.clean_old_events()
     usercategories = service.get_all_user_categories()
     for row in usercategories:
         user_map[row['user_id']].append(row['category_id'])
+    logger.info(f"Built category map for {len(user_map)} users.")
+
     eventcategories = service.get_all_event_categories()
     for row in eventcategories:
         event_map[row['event_id']].append(row['category_id'])
+    logger.info(f"Built category map for {len(event_map)} events.")
+
     matchedscore = service.generate_recommendations(user_map, event_map)
     top_recommendations = {}
     for user_id, scores in matchedscore.items():
         top_events = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:3]
         top_recommendations[user_id] = top_events
+    logger.info(f"Selected top 3 events for {len(top_recommendations)} users.")
 
     recommendations = []
     for user_id, top_events in top_recommendations.items():
@@ -52,6 +61,7 @@ def main():
         for event_id, score in top_events:
             eventdetails = service.get_event_by_ID(event_id)
             if not eventdetails:
+                logger.warning(f"Skipping event {event_id} for user {user_id}: no details found.")
                 continue
             eventdetails = strip_emojis(eventdetails)
             events.append({
@@ -67,10 +77,16 @@ def main():
             "user_id": user_id,
             "events": events,
         })
+        logger.info(f"Built {len(events)} event recommendations for user {user_id}.")
 
-    with open("recommendations.json", "w", encoding="utf-8") as f:
-        json.dump(recommendations, f, ensure_ascii=False, indent=2, default=str)
-    print(f"Saved recommendations for {len(recommendations)} users to recommendations.json")
+    try:
+        with open("recommendations.json", "w", encoding="utf-8") as f:
+            json.dump(recommendations, f, ensure_ascii=False, indent=2, default=str)
+        logger.info(f"Saved recommendations for {len(recommendations)} users to recommendations.json")
+    except Exception as e:
+        logger.error(f"Failed to write recommendations.json: {e}")
+
+
     
 if __name__ == "__main__":
     main()

@@ -8,7 +8,7 @@ class EventRepository:
     def get_old_events(self, days: int = 30):
         cutoff_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
         try:
-            response = self.client.table("events").select("name").lt("created_at", cutoff_date).execute()
+            response = self.client.table("events").select("name").lt("date_time", cutoff_date).execute()
         except Exception as e:
             raise Exception(f"Error fetching old events: {e}")
         return response.data
