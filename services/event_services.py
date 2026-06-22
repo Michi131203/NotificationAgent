@@ -52,3 +52,15 @@ class EventService:
             all_results[user_id] = scores
 
         return all_results
+    def get_event_by_ID(self, event_id):
+        try:
+            self.logger.info(f"Fetching event with ID: {event_id}")
+            event = self.repo.get_event_by_ID(event_id)
+            if event:
+                self.logger.info(f"Event found: {event}")
+            else:
+                self.logger.warning(f"No event found with ID: {event_id}")
+            return event
+        except Exception as e:
+            self.logger.error(f"Failed to fetch event by ID '{event_id}': {e}")
+            return None
