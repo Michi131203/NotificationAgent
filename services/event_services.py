@@ -69,3 +69,31 @@ class EventService:
         except Exception as e:
             self.logger.error(f"Failed to fetch event by ID '{event_id}': {e}")
             return None
+
+    def get_events_by_ids(self, event_ids: list[str]) -> list[dict]:
+        try:
+            self.logger.info(f"Fetching {len(event_ids)} events by ids.")
+            raw = self.repo.get_events_by_ids(event_ids)
+            events = [
+                {
+                    "id": e["id"],
+                    "name": e["name"],
+                    "date_time": e["date_time"],
+                    "location": e.get("location"),
+                    "image_url": e.get("image_url"),
+                    "source_url": e.get("source_url"),
+                    "event_type": e.get("event_type"),
+                    "host_name": e["hosts"]["name"] if e.get("hosts") else None,
+                    "categories": [
+                        ec["categories"]["name"]
+                        for ec in e.get("event_categories", [])
+                        if ec.get("categories")
+                    ],
+                }
+                for e in raw
+            ]
+            self.logger.info(f"Mapped {len(events)} events.")
+            return events
+        except Exception as e:
+            self.logger.error(f"Failed to fetch events by ids: {e}")
+            return []

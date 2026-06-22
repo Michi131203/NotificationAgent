@@ -36,4 +36,17 @@ class EventRepository:
         except Exception as e:
             raise Exception(f"Error fetching event with ID '{event_id}': {e}")
         return response.data[0] if response.data else None
+
+    def get_events_by_ids(self, event_ids: list[str]):
+        if not event_ids:
+            return []
+        try:
+            response = self.client.table("events").select(
+                "id, name, date_time, location, image_url, source_url, event_type, "
+                "hosts!host(name), "
+                "event_categories(categories(name))"
+            ).in_("id", event_ids).execute()
+        except Exception as e:
+            raise Exception(f"Error fetching events by ids: {e}")
+        return response.data
             

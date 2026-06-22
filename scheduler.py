@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime, timezone
 from apscheduler.schedulers.blocking import BlockingScheduler
 from dotenv import load_dotenv
@@ -10,9 +11,16 @@ from db.notification_log_repository import log_notification
 
 load_dotenv()
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 SCHEDULE_DAY    = os.getenv("SCHEDULE_DAY", "sun")
 SCHEDULE_HOUR   = int(os.getenv("SCHEDULE_HOUR", 9))
 SCHEDULE_MINUTE = int(os.getenv("SCHEDULE_MINUTE", 0))
+
+TOP_N = int(os.getenv("TOP_N_EVENTS", 3))
 
 
 def run_pipeline() -> None:
@@ -56,7 +64,7 @@ def run_pipeline() -> None:
         notification_id = None
         try:
             sorted_ids = sorted(scored_events, key=lambda eid: scored_events[eid], reverse=True)
-            events_payload = [events_by_id[eid] for eid in sorted_ids if eid in events_by_id]
+            events_payload = [events_by_id[eid] for eid in sorted_ids if eid in events_by_id][:TOP_N]
 
             if not events_payload:
                 continue
@@ -88,10 +96,11 @@ def start_scheduler() -> None:
         id="whazup_notification_pipeline"
     )
 
-    next_run = scheduler.get_job("whazup_notification_pipeline").next_run_time
+    job = scheduler.get_job("whazup_notification_pipeline")
+    next_run = getattr(job, "next_run_time", None)
     print(f"[scheduler] WhazUp Notification Agent started.")
     print(f"[scheduler] Schedule: Every {SCHEDULE_DAY} at {SCHEDULE_HOUR:02d}:{SCHEDULE_MINUTE:02d} Vienna time")
-    print(f"[scheduler] Next scheduled run: {next_run}")
+    print(f"[scheduler] Next scheduled run: {next_run if next_run else '(set after start)'}")
     print("[scheduler] Running pipeline now for initial verification...\n")
 
     run_pipeline()
@@ -101,4 +110,8 @@ def start_scheduler() -> None:
 
 
 if __name__ == "__main__":
-    start_scheduler()
+    
+    if "--once" in sys.argv:
+        run_pipeline()
+    else:
+        start_scheduler()

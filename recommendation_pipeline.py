@@ -1,6 +1,7 @@
 import re
 import json
 from db.client import SupabaseClient
+from db.recommendation_repository import write_recommendation
 from services.event_services import EventService
 from utils.logger import get_logger
 from collections import defaultdict
@@ -102,6 +103,12 @@ def main():
         })
         logger.info(f"Built {len(events)} event recommendations for user {user_id}.")
 
+        try:
+            rec_id = write_recommendation(user_id, events)
+            logger.info(f"Wrote recommendation {rec_id} for user {user_id}.")
+        except Exception as e:
+            logger.error(f"Failed to write recommendation for user {user_id}: {e}")
+
     try:
         with open("recommendations.json", "w", encoding="utf-8") as f:
             json.dump(recommendations, f, ensure_ascii=False, indent=2, default=str)
@@ -110,6 +117,6 @@ def main():
         logger.error(f"Failed to write recommendations.json: {e}")
 
 
-    
+
 if __name__ == "__main__":
     main()
